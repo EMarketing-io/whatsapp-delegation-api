@@ -6,6 +6,7 @@ from utils import get_india_timestamp
 
 
 def parse_structured_output(structured_output, choice, source_link=""):
+    print("🔍 Raw structured_output:", structured_output)
     employee_data = load_employee_data()
     rows = []
     lines = structured_output.strip().split("\n")
