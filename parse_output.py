@@ -1,7 +1,6 @@
 import uuid
-from datetime import datetime
-from employee import load_employee_data
 import difflib
+from employee import load_employee_data
 from utils import get_india_timestamp
 
 
@@ -31,7 +30,10 @@ def parse_structured_output(structured_output, choice, source_link=""):
             else:
                 parts = [p.strip() for p in line.split(",") if p.strip()]
 
-            if len(parts) >= 9:
+            if len(parts) >= 3:  # At least Task, Employee Name, Target Date
+                while len(parts) < 9:
+                    parts.append("")  # Pad missing fields
+
                 task_id = uuid.uuid4().hex[:8]
                 emp_name = parts[1]
                 emp_email = employee_data.get(emp_name, "")
@@ -47,20 +49,22 @@ def parse_structured_output(structured_output, choice, source_link=""):
                         matched_source = best_match[0]
 
                 row_data = [
-                    get_india_timestamp(),
-                    task_id,
-                    parts[0],
-                    emp_name,
-                    emp_email,
-                    parts[2],
-                    parts[3],
-                    parts[4],
-                    parts[5],
-                    parts[6],
-                    assigned_name,
-                    assigned_email,
-                    parts[7],
-                    matched_source or source_link,
+                    get_india_timestamp(),  # Timestamp
+                    task_id,  # Task ID
+                    parts[0],  # Task Description
+                    emp_name,  # Employee Name
+                    emp_email,  # Email ID
+                    parts[2],  # Target Date
+                    parts[3],  # Priority
+                    parts[4],  # Approval Needed
+                    parts[5],  # Client Name
+                    parts[6],  # Department
+                    assigned_name,  # Assigned By
+                    assigned_email,  # Assigned By Email
+                    parts[7],  # Comments
+                    matched_source or source_link,  # Source Link
                 ]
+
                 rows.append(row_data)
+
     return rows
