@@ -1,12 +1,15 @@
-import tempfile, os, requests
+import tempfile
+import os
+import requests
 import openai
-import ffmpeg
+import subprocess
 from config import OPENAI_API_KEY
 
 openai.api_key = OPENAI_API_KEY
 
 
 def transcribe_audio(gdrive_url):
+    # Extract file ID from Google Drive link
     file_id = gdrive_url.split("/d/")[1].split("/")[0] if "/d/" in gdrive_url else None
     if not file_id:
         raise ValueError("Invalid Google Drive link.")
@@ -24,20 +27,30 @@ def transcribe_audio(gdrive_url):
         tmp_audio_path = tmp_audio.name
 
     converted_path = tmp_audio_path.replace(suffix, ".mp3")
-    try:
-        ffmpeg.input(tmp_audio_path).output(converted_path).run(
-            overwrite_output=True, quiet=True
-        )
-    except Exception as e:
-        print("❌ ffmpeg conversion failed:", e)
-        raise e
 
+    # 🔁 Convert using ffmpeg via subprocess
+    try:
+        print(f"🔁 Running ffmpeg on: {tmp_audio_path}")
+        result = subprocess.run(
+            ["ffmpeg", "-y", "-i", tmp_audio_path, converted_path],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        print("✅ ffmpeg conversion successful")
+    except subprocess.CalledProcessError as e:
+        print("❌ ffmpeg failed with error:")
+        print(e.stderr.decode())
+        raise
+
+    # 🧠 Transcribe using Whisper
     try:
         with open(converted_path, "rb") as audio_file:
             transcript_response = openai.Audio.translate("whisper-1", audio_file)
+            print("📝 Transcription result:", transcript_response)
     except Exception as e:
         print("❌ Whisper failed:", e)
-        raise e
+        raise
     finally:
         os.remove(tmp_audio_path)
         os.remove(converted_path)
