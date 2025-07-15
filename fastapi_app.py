@@ -38,35 +38,47 @@ class ProcessRequest(BaseModel):
 @app.post("/process")
 def process(req: ProcessRequest):
     try:
+        print("🚀 Starting /process request")
+
         choice = req.choice.strip().lower()
         gdrive_url = req.gdrive_url.strip() if req.gdrive_url else ""
         text_input = req.text_input.strip() if req.text_input else ""
         source_link = ""
+
+        print("📦 Choice received:", choice)
 
         if choice == "audio":
             if not gdrive_url:
                 raise HTTPException(
                     status_code=400, detail="Missing Google Drive URL for audio choice."
                 )
+            print("🎧 Starting transcription for audio")
             transcription, source_link = transcribe_audio(gdrive_url)
 
         elif choice == "text":
             transcription = text_input
             source_link = text_input
+            print("📝 Using text input directly")
 
         else:
             raise HTTPException(
                 status_code=400, detail="Invalid choice. Use 'audio' or 'text'."
             )
 
+        print("🧠 Extracting tasks")
         structured_output = extract_tasks(transcription)
+
+        print("📋 Parsing structured output")
         rows = parse_structured_output(structured_output, choice, source_link)
+
+        print(f"📤 Writing {len(rows)} rows to Google Sheet")
         write_to_sheet(rows)
+
         return {"message": f"{len(rows)} structured tasks added."}
 
     except Exception as e:
-        print("❌ Full error:", str(e))  # Log it for Cloud Run
-        raise HTTPException(status_code=500, detail=str(e))  # Return message to Postman
+        print("❌ Full error:", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/webhook")
