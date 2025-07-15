@@ -22,14 +22,16 @@ def process_text_task(text):
         print("❌ Text task processing failed:", str(e))
 
 
-
 def process_audio_task(media_url):
     try:
+        print("🎧 Processing audio task")
         gdrive_url = upload_to_drive(media_url)
         transcription, source_link = transcribe_audio(gdrive_url)
         structured_output = extract_tasks(transcription)
         rows = parse_structured_output(structured_output, "audio", source_link)
+        print("📋 Parsed rows:", rows)
         write_to_sheet(rows)
+        print("📤 Sheet written.")
     except Exception as e:
         print("❌ Audio task processing failed:", str(e))
 
@@ -92,24 +94,28 @@ async def receive_whatsapp(request: Request, background_tasks: BackgroundTasks):
         print("📩 WhatsApp webhook hit!")
         data = await request.json()
         message = data.get("message", {})
-        media_url = message.get("url")
-        message_text = message.get("text", "")
         sender = data.get("user", {}).get("phone", "")
+        media_url = message.get("gdrive_url") or message.get("url")
+        message_type = message.get("type", "").lower()
+        message_text = message.get("text", "")
 
-        if message.get("type") == "text" and message_text:
+        # Handle text message starting with /task
+        if message_type == "text" and message_text:
             if message_text.lower().startswith(("/task", "task")):
                 command_text = message_text.split(" ", 1)[-1].strip()
                 background_tasks.add_task(process_text_task, command_text)
                 return {"status": "✅ Text task received", "from": sender}
 
-        if message.get("type") in ["ptt", "document"] and message.get(
-            "mime", ""
-        ).startswith("audio/"):
+        # Handle audio message
+        if message_type in ["audio", "ptt", "document"] or (
+            message.get("mime", "").startswith("audio/")
+        ):
             if media_url:
                 background_tasks.add_task(process_audio_task, media_url)
-                return {"status": "✅ Audio received", "from": sender}
+                return {"status": "✅ Audio task received", "from": sender}
 
         return {"status": "ignored", "reason": "No task trigger", "from": sender}
+
     except Exception as e:
         print("❌ Webhook error:", str(e))
         return {"error": str(e)}
