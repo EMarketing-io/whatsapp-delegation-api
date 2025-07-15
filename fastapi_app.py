@@ -84,6 +84,7 @@ def process(req: ProcessRequest):
 @app.post("/webhook")
 async def receive_whatsapp(request: Request, background_tasks: BackgroundTasks):
     try:
+        print("📩 WhatsApp webhook hit!")
         data = await request.json()
         message = data.get("message", {})
         media_url = message.get("url")
