@@ -1,43 +1,44 @@
 import os
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseUpload
-from google.oauth2 import service_account
+import tempfile
 import requests
-import io
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+from google.oauth2.service_account import Credentials
+from config import SERVICE_ACCOUNT_FILE
 
-SERVICE_ACCOUNT_FILE = os.getenv("SERVICE_ACCOUNT_FILE", "/secrets/credentials.json")
-SCOPES = ["https://www.googleapis.com/auth/drive"]
+# Pull Shared Drive ID from .env
 SHARED_DRIVE_ID = os.getenv("SHARED_DRIVE_ID")
 
 
-def upload_to_drive(file_url):
-    credentials = service_account.Credentials.from_service_account_file(
-        SERVICE_ACCOUNT_FILE, scopes=SCOPES
+def upload_to_drive(media_url):
+    creds = Credentials.from_service_account_file(
+        SERVICE_ACCOUNT_FILE, scopes=["https://www.googleapis.com/auth/drive"]
     )
+    drive_service = build("drive", "v3", credentials=creds)
 
-    drive_service = build("drive", "v3", credentials=credentials)
+    response = requests.get(media_url)
+    if response.status_code != 200:
+        raise Exception("Failed to download audio from WhatsApp")
 
-    response = requests.get(file_url)
-    response.raise_for_status()
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as audio_file:
+        audio_file.write(response.content)
+        audio_path = audio_file.name
 
-    file_data = io.BytesIO(response.content)
     file_metadata = {
-        "name": "whatsapp_audio.mp3",
+        "name": os.path.basename(audio_path),
         "parents": [SHARED_DRIVE_ID],
         "driveId": SHARED_DRIVE_ID,
     }
 
-    media = MediaIoBaseUpload(file_data, mimetype="audio/mpeg", resumable=True)
-
+    media = MediaFileUpload(audio_path, mimetype="audio/mpeg")
     uploaded = (
         drive_service.files()
         .create(
-            body=file_metadata,
-            media_body=media,
-            fields="id, webViewLink",
-            supportsAllDrives=True,
+            body=file_metadata, media_body=media, fields="id", supportsAllDrives=True
         )
         .execute()
     )
 
-    return uploaded["webViewLink"]
+    os.remove(audio_path)
+
+    return f"https://drive.google.com/file/d/{uploaded['id']}/view"
