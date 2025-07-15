@@ -1,0 +1,39 @@
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+env/
+venv/
+ENV/
+.venv/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+
+# Credentials (⚠️ Optional — only ignore if using Secret Manager)
+credentials.json
+
+# Editor/IDE configs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+*.log
+
+# Byte-compiled libraries
+*.egg
+*.egg-info/
+dist/
+build/
+
+# PIP cache
+pip-wheel-metadata/
