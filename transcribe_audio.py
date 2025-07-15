@@ -9,7 +9,6 @@ openai.api_key = OPENAI_API_KEY
 
 
 def transcribe_audio(gdrive_url):
-    # Extract file ID from Google Drive link
     file_id = gdrive_url.split("/d/")[1].split("/")[0] if "/d/" in gdrive_url else None
     if not file_id:
         raise ValueError("Invalid Google Drive link.")
@@ -18,17 +17,18 @@ def transcribe_audio(gdrive_url):
     download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
     response = requests.get(download_url)
 
-    if "html" in response.headers.get("Content-Type", ""):
+    if response.status_code != 200 or "html" in response.headers.get(
+        "Content-Type", ""
+    ):
         raise Exception("Invalid or private Google Drive audio file.")
 
-    suffix = ".oga"
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_audio:
+    # Use a generic suffix that won’t mislead ffmpeg
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".bin") as tmp_audio:
         tmp_audio.write(response.content)
         tmp_audio_path = tmp_audio.name
 
-    converted_path = tmp_audio_path.replace(suffix, ".mp3")
+    converted_path = tmp_audio_path.replace(".bin", ".mp3")
 
-    # 🔁 Convert using ffmpeg via subprocess
     try:
         print(f"🔁 Running ffmpeg on: {tmp_audio_path}")
         result = subprocess.run(
@@ -43,7 +43,6 @@ def transcribe_audio(gdrive_url):
         print(e.stderr.decode())
         raise
 
-    # 🧠 Transcribe using Whisper
     try:
         with open(converted_path, "rb") as audio_file:
             transcript_response = openai.Audio.translate("whisper-1", audio_file)
