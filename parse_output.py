@@ -67,5 +67,5 @@ def parse_structured_output(structured_output, choice, source_link=""):
                 ]
 
                 rows.append(row_data)
-
+    print("📋 Parsed rows:", rows)
     return rows
