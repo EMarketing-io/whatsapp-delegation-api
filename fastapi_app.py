@@ -11,11 +11,16 @@ app = FastAPI()
 
 def process_text_task(text):
     try:
+        print("🔍 process_text_task input:", text)
         structured_output = extract_tasks(text)
+        print("🧠 structured_output:\n", structured_output)
         rows = parse_structured_output(structured_output, "text", text)
+        print("📋 Parsed rows:", rows)
         write_to_sheet(rows)
+        print("📤 Sheet written.")
     except Exception as e:
         print("❌ Text task processing failed:", str(e))
+
 
 
 def process_audio_task(media_url):
