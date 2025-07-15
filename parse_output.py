@@ -24,7 +24,8 @@ def parse_structured_output(structured_output, choice, source_link=""):
 
         if any(d in line for d in ["|", "\t", ","]):
             if "|" in line:
-                parts = [p.strip() for p in line.split("|") if p.strip()]
+                parts = [p.strip() for p in line.split("|")]
+                parts = parts[1:-1]
             elif "\t" in line:
                 parts = [p.strip() for p in line.split("\t") if p.strip()]
             else:
