@@ -26,10 +26,17 @@ def process_audio_task(media_url):
     try:
         print("🎧 Processing audio task")
         gdrive_url = upload_to_drive(media_url)
+        print("📁 Uploaded to Drive:", gdrive_url)
+
         transcription, source_link = transcribe_audio(gdrive_url)
+        print("📝 Transcription result:", transcription)
+
         structured_output = extract_tasks(transcription)
+        print("🧠 structured_output:\n", structured_output)
+
         rows = parse_structured_output(structured_output, "audio", source_link)
         print("📋 Parsed rows:", rows)
+
         write_to_sheet(rows)
         print("📤 Sheet written.")
     except Exception as e:
