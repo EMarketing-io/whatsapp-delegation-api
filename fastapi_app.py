@@ -126,3 +126,7 @@ async def receive_whatsapp(request: Request, background_tasks: BackgroundTasks):
     except Exception as e:
         print("❌ Webhook error:", str(e))
         return {"error": str(e)}
+
+@app.get("/")
+def health_check():
+    return {"status": "alive"}
