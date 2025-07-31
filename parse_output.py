@@ -1,8 +1,6 @@
 import uuid
 import difflib
 import traceback
-from datetime import datetime
-from dateutil import parser
 from employee import load_employee_data
 from utils import get_india_timestamp
 
@@ -20,22 +18,6 @@ def fuzzy_lookup(name, employee_data):
         )
         return original_name, employee_data[original_name]
     return "", ""
-
-
-def normalize_date(raw_date):
-    try:
-        if not raw_date:
-            return ""
-        # Try to parse the date
-        dt = parser.parse(raw_date, dayfirst=True, fuzzy=True)
-
-        # If year is missing (e.g., "31/07" returns 1900), replace with current year
-        if dt.year == 1900:
-            dt = dt.replace(year=datetime.now().year)
-
-        return dt.strftime("%d/%m/%Y")
-    except Exception:
-        return raw_date.strip()  # fallback if parsing fails
 
 
 def parse_structured_output(structured_output, choice, source_link=""):
@@ -76,8 +58,6 @@ def parse_structured_output(structured_output, choice, source_link=""):
                             assigned_name_raw, employee_data
                         )
 
-                        normalized_target_date = normalize_date(parts[2])
-
                         matched_source = ""
                         if source_segments:
                             best_match = difflib.get_close_matches(
@@ -92,7 +72,7 @@ def parse_structured_output(structured_output, choice, source_link=""):
                             parts[0],
                             emp_name,
                             emp_email,
-                            normalized_target_date,
+                            parts[2],
                             parts[3],
                             parts[4],
                             parts[5],
