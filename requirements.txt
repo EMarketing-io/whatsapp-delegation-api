@@ -11,3 +11,4 @@ pydantic
 ffmpeg-python
 requests
 pytz
+python-dateutil
