@@ -5,6 +5,21 @@ from employee import load_employee_data
 from utils import get_india_timestamp
 
 
+def fuzzy_lookup(name, employee_data):
+    if not name:
+        return "", ""
+    normalized = name.strip().lower()
+    matches = difflib.get_close_matches(
+        normalized, [n.lower() for n in employee_data], n=1, cutoff=0.6
+    )
+    if matches:
+        original_name = next(
+            orig for orig in employee_data if orig.lower() == matches[0]
+        )
+        return original_name, employee_data[original_name]
+    return "", ""
+
+
 def parse_structured_output(structured_output, choice, source_link=""):
     try:
         print("🔍 Raw structured_output:", structured_output)
@@ -34,10 +49,14 @@ def parse_structured_output(structured_output, choice, source_link=""):
                             parts.append("")
 
                         task_id = uuid.uuid4().hex[:8]
-                        emp_name = parts[1]
-                        emp_email = employee_data.get(emp_name, "")
-                        assigned_name = parts[8]
-                        assigned_email = employee_data.get(assigned_name, "")
+
+                        emp_name_raw = parts[1]
+                        emp_name, emp_email = fuzzy_lookup(emp_name_raw, employee_data)
+
+                        assigned_name_raw = parts[8]
+                        assigned_name, assigned_email = fuzzy_lookup(
+                            assigned_name_raw, employee_data
+                        )
 
                         matched_source = ""
                         if source_segments:
